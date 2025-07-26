@@ -1,12 +1,12 @@
+require('dotenv').config();
+
 const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, NoSubscriberBehavior } = require('@discordjs/voice');
 const play = require('play-dl');
 
-// Lendo token diretamente do ambiente (Railway)
-const token = process.env.TOKEN || '';
-console.log("🔍 Verificação: TOKEN carregado? ", token ? "Sim" : "Não");
-if (!token) {
-    console.error("❌ ERRO: Token do bot não encontrado. Configure a variável de ambiente TOKEN no Railway.");
+const token = process.env.TOKEN;
+if (!token || typeof token !== 'string') {
+    console.error("❌ ERRO: Token do bot não encontrado. Configure a variável de ambiente TOKEN.");
     process.exit(1);
 }
 
@@ -15,21 +15,21 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.MessageContent
-    ]
+        GatewayIntentBits.MessageContent,
+    ],
 });
 
 // Fila de músicas
 const queue = new Map();
 
-client.on('ready', () => {
+client.once('ready', () => {
     console.log(`✅ Bot logado como ${client.user.tag}`);
 });
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
-    const args = message.content.split(' ');
+    const args = message.content.trim().split(/ +/);
     const command = args.shift().toLowerCase();
 
     if (command === '!play') {
@@ -40,13 +40,14 @@ client.on('messageCreate', async (message) => {
         if (!songQuery) return message.reply('❌ Você precisa informar o nome ou link da música!');
 
         let serverQueue = queue.get(message.guild.id);
+
         if (!serverQueue) {
             serverQueue = {
-                voiceChannel: voiceChannel,
+                voiceChannel,
                 connection: null,
                 songs: [],
                 player: createAudioPlayer({ behaviors: { noSubscriber: NoSubscriberBehavior.Pause } }),
-                playing: true
+                playing: true,
             };
             queue.set(message.guild.id, serverQueue);
         }
@@ -57,7 +58,7 @@ client.on('messageCreate', async (message) => {
 
             const songObj = {
                 title: song.video_details.title,
-                url: song.video_details.url
+                url: song.video_details.url,
             };
 
             serverQueue.songs.push(songObj);
@@ -67,7 +68,7 @@ client.on('messageCreate', async (message) => {
                 serverQueue.connection = joinVoiceChannel({
                     channelId: voiceChannel.id,
                     guildId: message.guild.id,
-                    adapterCreator: message.guild.voiceAdapterCreator
+                    adapterCreator: message.guild.voiceAdapterCreator,
                 });
                 playSong(message.guild.id);
             }
@@ -107,7 +108,7 @@ async function playSong(guildId) {
         serverQueue.player.play(resource);
         serverQueue.connection.subscribe(serverQueue.player);
 
-        serverQueue.player.on('idle', () => {
+        serverQueue.player.once('idle', () => {
             serverQueue.songs.shift();
             playSong(guildId);
         });
