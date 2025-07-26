@@ -3,6 +3,13 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, NoSubscriberBehavior } = require('@discordjs/voice');
 const play = require('play-dl');
 
+// Lendo token do ambiente
+const token = process.env.TOKEN;
+if (!token || typeof token !== 'string') {
+    console.error("❌ ERRO: Token do bot não encontrado. Configure a variável de ambiente TOKEN.");
+    process.exit(1); // encerra a aplicação
+}
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -11,8 +18,6 @@ const client = new Client({
         GatewayIntentBits.MessageContent
     ]
 });
-
-const token = process.env.TOKEN; // Token vem do arquivo .env
 
 // Fila de músicas
 const queue = new Map();
