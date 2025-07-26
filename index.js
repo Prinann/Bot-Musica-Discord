@@ -1,13 +1,13 @@
-require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, NoSubscriberBehavior } = require('@discordjs/voice');
 const play = require('play-dl');
 
-// Lendo token do ambiente
-const token = process.env.TOKEN;
-if (!token || typeof token !== 'string') {
-    console.error("❌ ERRO: Token do bot não encontrado. Configure a variável de ambiente TOKEN.");
-    process.exit(1); // encerra a aplicação
+// Lendo token diretamente do ambiente (Railway)
+const token = process.env.TOKEN || '';
+console.log("🔍 Verificação: TOKEN carregado? ", token ? "Sim" : "Não");
+if (!token) {
+    console.error("❌ ERRO: Token do bot não encontrado. Configure a variável de ambiente TOKEN no Railway.");
+    process.exit(1);
 }
 
 const client = new Client({
